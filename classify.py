@@ -43,16 +43,8 @@ print("[INFO] classifying image...")
 proba = model.predict(image)[0]
 idxs = np.argsort(proba)[::-1][:2]
 
-#print("Probability... ",proba)
-#print("model...",model.predict(image))
-#print("MLB... ",mlb)
-
 print("Probability... ",proba)
 print("idxs: ", idxs)
-print("mlb classes: ", mlb.classes_[0])
-print("proba: ", proba[0])
-print("mlb classes 1: ", mlb.classes_[3])
-print("proba 1: ", proba[3])
 
 # loop over the indexes of the high confidence class labels
 for (i, j) in enumerate(idxs):
