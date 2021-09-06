@@ -37,7 +37,8 @@ args = vars(ap.parse_args())
 # initialize the number of epochs to train for, initial learning rate,
 # batch size, and image dimensions
 # EPOCHS -> in order to learn patterns using backpropagation 
-EPOCHS = 75
+# use 100 or 125 epochs
+EPOCHS = 125
 # INIT_LR -> initial learning rate
 INIT_LR = 1e-3
 # BS -> batch size
