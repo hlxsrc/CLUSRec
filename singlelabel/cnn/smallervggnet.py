@@ -87,7 +87,7 @@ class SmallerVGGNet:
 
         # softmax classifier
         model.add(Dense(classes))
-        model.add(Activation(finalAct))
+        model.add(Activation("softmax"))
 
         # return the constructed network architecture
         return model
