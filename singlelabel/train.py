@@ -1,164 +1,152 @@
 # USAGE
-# python train.py --dataset dataset --model model.hdf5
+# python train.py
 
-# import the necessary packages
+# Enable/disable debugging logs (0,1,2,3)
+# 0 -> all, 3 -> none
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-# scikit-learn Libraries
-from sklearn.preprocessing import LabelBinarizer
+# Import confiuration file
+from configuration import config
+
+# Import the necessary packages
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.preprocessing.image import load_img
+from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from sklearn.metrics import multilabel_confusion_matrix
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import StratifiedKFold
-
-# cnn libraries
 from cnn.smallervggnet import SmallerVGGNet
-from cnn.preprocessing import ImageToArrayPreprocessor
-from cnn.preprocessing import SimplePreprocessor
-from cnn.datasets import SimpleDatasetLoader
-
-# keras library
-from tensorflow.keras.optimizers import SGD
-
-# numpy library
-import numpy as np
-
-# aux libraries
-from imutils import paths
 import matplotlib.pyplot as plt
+from imutils import paths
+import tensorflow as tf
 import seaborn as sns
+import numpy as np
+import matplotlib
 import argparse
+import random
+import pickle
+import cv2
 
-# construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", required=True, help="path to input dataset")
-ap.add_argument("-m", "--model", required=True, help="path to output model")
-ap.add_argument("-p", "--plot", type=str, default="plot.png",
-	help="path to output accuracy/loss plot")
-args = vars(ap.parse_args())
+# Construct the argument parse
+#ap = argparse.ArgumentParser()
+#ap.add_argument("-d", "--dataset", required=True,
+#   help="path to input dataset (directory of images)")
+#args = vars(ap.parse_args())
 
-# grab the list of images that we'll be describing
-print("[INFO] loading images...")
-imagePaths = list(paths.list_images(args["dataset"]))
+# Disable eager execution
+tf.compat.v1.disable_eager_execution()
 
-# initialize the image preprocessors
-sp = SimplePreprocessor(32, 32)
-iap = ImageToArrayPreprocessor()
+# Load the contents of the CSV annotations file
+print("[INFO] loading dataset...")
+rows = open(config.ANNOTS_PATH).read().strip().split("\n")
 
-# load the dataset from disk then scale the raw pixel intensities
-# to the range [0, 1]
-sdl = SimpleDatasetLoader(preprocessors=[sp, iap])
-(data, labels) = sdl.load(imagePaths, verbose=500)
-data = data.astype("float") / 255.0
+# Initialize data (images), targets (bounding boxes) and filenames (images)
+data = []
+targets = []
+imageNames = []
 
-print("[INFO] labels... ", labels)
+# Loop over the rows
+for row in rows:
 
-# partition the data into training and testing splits using 75% of
-# the data for training and the remaining 25% for testing
-(trainX, testX, trainY, testY) = train_test_split(data, labels, test_size=0.25, random_state=42)
+    # Break the row into the filename and bounding box coordinates
+    row = row.split(",")
+    (imageName, startX, startY, endX, endY) = row
 
-# convert the labels from integers to vectors
-trainY = LabelBinarizer().fit_transform(trainY)
-testY = LabelBinarizer().fit_transform(testY)
+    # Derive the path to the input image
+    imagePath = os.path.sep.join([config.IMAGES_PATH, imageName])
+    # Load the image (in OpenCV format)
+    image = cv2.imread(imagePath)
+    # Grab its dimensions
+    (h, w) = image.shape[:2]
 
-# initialize the optimizer and model
+    # Scale the bounding box coordinates relative to the spatial
+    # dimensions of the input image
+    startX = float(startX) / w
+    startY = float(startY) / h
+    endX = float(endX) / w
+    endY = float(endY) / h
+
+    # Load the image and preprocess it
+    image = load_img(imagePath, target_size=(config.IMAGE_DIMS[1], config.IMAGE_DIMS[0]))
+    image = img_to_array(image)
+
+    # Update our list of data, targets, and filenames
+    data.append(image)
+    targets.append((startX, startY, endX, endY))
+    imageNames.append(imageName)
+
+# Scale the raw pixel intensities to the range [0, 1]
+data = np.array(data, dtype="float32") / 255.0
+targets = np.array(targets, dtype="float32")
+
+# Partition the data into training and testing splits using 80% of
+# the data for training and the remaining 20% for testing
+split = train_test_split(data, targets,
+    imageNames, test_size=0.2, random_state=42)
+
+# Unpack the data split
+(trainImages, testImages) = split[:2]
+(trainTargets, testTargets) = split[2:4]
+(trainPaths, testPaths) = split[4:]
+
+# Write testing image paths to disk
+print("[INFO] saving testing image paths...")
+f = open(config.TEST_PATHS, "w")
+f.write("\n".join(testPaths))
+f.close()
+
+# Construct the image generator for data augmentation
+#aug = ImageDataGenerator(rotation_range=25, width_shift_range=0.1,
+#    height_shift_range=0.1, shear_range=0.2, zoom_range=0.2,
+#    horizontal_flip=True, fill_mode="nearest")
+
+# Initialize the model using a sigmoid activation as the final layer
+# in the network so we can perform multi-label classification
+# since it is single label we don't need number of classes
+# neither the finalAct
 print("[INFO] compiling model...")
-opt = SGD(learning_rate=0.005)
-model = SmallerVGGNet.build(width=32, height=32, depth=3, classes=2)
+model = SmallerVGGNet.build(
+    width=config.IMAGE_DIMS[1], height=config.IMAGE_DIMS[0],
+    depth=config.IMAGE_DIMS[2], classes=1,
+    finalAct="sigmoid")
 
-model.compile(loss="sparse_categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
-#model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
+# Initialize the optimizer (SGD)
+opt = Adam(lr=config.INIT_LR, decay=config.INIT_LR / config.EPOCHS)
 
+# Compile the model using categorical cross-entropy
+#model.compile(loss="categorical_crossentropy", optimizer=opt,
+#    metrics=["accuracy"])
+model.compile(loss="mse", optimizer=opt,
+    metrics=["accuracy"])
+
+# Print summary of the network
 model.summary()
 
-# train the network
-print("[INFO] training network...")
-H = model.fit(trainX, trainY, validation_data=(testX, testY), batch_size=32, epochs=100, verbose=10)
+# Train the network
+print("[INFO] training bounding box regressor...")
+H = model.fit(
+    trainImages, trainTargets,
+    validation_data=(testImages, testTargets),
+    batch_size=config.BS,
+    epochs=config.EPOCHS, 
+    verbose=1)
 
-# Modify parameters accordingly
-BS = 32
-EPOCHS = 100
-
-# train the network
-#print("[INFO] training network...")
-#H = model.fit(
-#	trainX, trainY, batch_size=BS,
-#	validation_data=(testX, testY),
-#	epochs=EPOCHS, verbose=10)
-
-# save the network to disk
+# Save the model to disk
 print("[INFO] serializing network...")
-model.save(args["model"])
+model.save(config.MODEL_PATH, save_format="h5")
 
-# evaluate the network
-print("[INFO] evaluating network...")
-predictions = model.predict(testX, batch_size=32)
-print(classification_report(testY.argmax(axis=1), predictions.argmax(axis=1), target_names=["other", "person"]))
-
-# Starts cross validation
-print("\nCross Validation...")
-
-# fix random seed for reproducibility
-seed = 7
-np.random.seed(seed)
-
-# define 10-fold cross validation test harness
-kfold = StratifiedKFold(n_splits=3, shuffle=True, random_state=seed)
-cvscores = []
-
-i = 1
-
-for train, test in kfold.split(data, labels):
-
-    # Fold title
-    print("\nFold: ", i)
-    i = i + 1
-
-    # initialize the optimizer and model
-    print("[INFO] compiling model...")
-    opt = SGD(learning_rate=0.005)
-    model = SmallerVGGNet.build(width=32, height=32, depth=3, classes=2, finalAct="sigmoid")
-    model.compile(loss="sparse_categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
-
-    # convert the labels from integers to vectors
-    labels = LabelBinarizer().fit_transform(labels)
-
-    # train the network
-    print("[INFO] training network...")
-    model.fit(data[train], labels[train], batch_size=32, epochs=100, verbose=0)
-
-    # evaluate the model
-    print("[INFO] evaluating model...")
-    scores = model.evaluate(data[test], labels[test], verbose=0)
-    print("Fold accuracy: %.2f%%" % (scores[1] * 100))
-    cvscores.append(scores[1] * 100)
-
-print("\nAccuracy %.2f%% (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
-
-# Confusion Matrix
-print("\nConfusion Matrix...")
-cm = confusion_matrix(testY.argmax(axis=1), predictions.argmax(axis=1))
-print(cm)
-
-ax = plt.subplot()
-sns.heatmap(cm, annot=True, ax=ax, fmt='g', cmap='Greens')  # annot=True to annotate cells
-
-# labels, title and ticks
-ax.set_xlabel('Predicted labels')
-ax.set_ylabel('True labels')
-ax.set_title('Confusion Matrix')
-ax.xaxis.set_ticklabels(['other', 'person'])
-ax.yaxis.set_ticklabels(['other', 'person'])
-
-# plot the training loss and accuracy
+# Plot the model training history
+N = config.EPOCHS
 plt.style.use("ggplot")
 plt.figure()
-plt.plot(np.arange(0, 100), H.history["loss"], label="train_loss")
-plt.plot(np.arange(0, 100), H.history["val_loss"], label="val_loss")
-plt.plot(np.arange(0, 100), H.history["accuracy"], label="train_acc")
-plt.plot(np.arange(0, 100), H.history["val_accuracy"], label="val_acc")
-plt.title("Training Loss and Accuracy")
+plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
+plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
+plt.title("Bounding Box Regression Loss on Training Set")
 plt.xlabel("Epoch #")
-plt.ylabel("Loss/Accuracy")
-plt.legend(loc="upper left")
-plt.savefig(args["plot"])
-plt.show()
+plt.ylabel("Loss")
+plt.legend(loc="lower left")
+plt.savefig(config.PLOT_PATH)

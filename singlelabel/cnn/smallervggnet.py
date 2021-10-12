@@ -80,14 +80,22 @@ class SmallerVGGNet:
 
         # first (and only) set of FC => RELU layers
         model.add(Flatten())
-        model.add(Dense(1024))
+        #model.add(Dense(1024))
+        #model.add(Activation("relu"))
+        #model.add(BatchNormalization())
+        #model.add(Dropout(0.5))
+        model.add(Dense(128))
         model.add(Activation("relu"))
-        model.add(BatchNormalization())
-        model.add(Dropout(0.5))
+        model.add(Dense(64))
+        model.add(Activation("relu"))
+        model.add(Dense(32))
+        model.add(Activation("relu"))
+        model.add(Dense(4))
+        model.add(Activation("sigmoid"))
 
         # softmax classifier
-        model.add(Dense(classes))
-        model.add(Activation("softmax"))
+        #model.add(Dense(classes))
+        #model.add(Activation("softmax"))
 
         # return the constructed network architecture
         return model
