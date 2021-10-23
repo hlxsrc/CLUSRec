@@ -18,7 +18,7 @@ BS = 32
 TEST_SPLIT = 20
 
 # Define the base path to the input dataset 
-BASE_PATH = "../../datasets/" + DATASET
+BASE_PATH = "../../../datasets/" + DATASET
 
 # Add dir to complete base path
 IMAGES_PATH = os.path.sep.join([BASE_PATH, "images"])
@@ -39,7 +39,7 @@ test_path = str(TEST) + "_test_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + st
 # Define the path to the output serialized model, model training plot,
 # and testing image filenames
 MODEL_PATH = os.path.sep.join([BASE_OUTPUT, model_path])
-LB_PATH = os.path.sep.join([BASE_OUTPUT, lb_path])
+LB_PATH = os.path.sep.join([BASE_OUTPUT, lbin_path])
 ACCS_PATH = os.path.sep.join([BASE_OUTPUT, accs_path])
 LOSS_PATH = os.path.sep.join([BASE_OUTPUT, loss_path])
 TEST_PATHS = os.path.sep.join([BASE_OUTPUT, test_path])
