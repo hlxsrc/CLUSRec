@@ -1,14 +1,11 @@
 # This scripts creates a CNN model using VGGNet to predict classes of images using bouding box regression.
 # USAGE
-# python bb_train.py --dataset dataset --model human.model --labelbin human.pickle
+# python train_bbr.py --config <configuration_file>
 
 # Enable/disable debugging logs (0,1,2,3)
 # 0 -> all, 3 -> none
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-# Import confiuration file
-from configuration import config
 
 # Import the necessary packages
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -36,15 +33,21 @@ import os
 
 # Construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-#ap.add_argument("-d", "--dataset", required=True,
-#   help="path to input dataset (directory of images)")
-#ap.add_argument("-m", "--model", required=True,
-#   help="path to output model")
-#ap.add_argument("-l", "--labelbin", required=True,
-#   help="path to output label binarizer")
-#ap.add_argument("-p", "--plot", type=str, default="plot.png",
-#   help="path to output accuracy/loss plot")
+ap.add_argument("-c", "--config", required=True,
+   help="Path to configuration file")
 args = vars(ap.parse_args())
+
+# List to store configuration file name
+cf = []
+
+# Get configuration file
+if not args["config"]: 
+    cf[0] = "config"
+else:
+    cf[0] = args["config"]
+
+# Import configuration file
+from configuration import cf[0]
 
 # Disable eager execution
 tf.compat.v1.disable_eager_execution()
@@ -59,7 +62,7 @@ imagePaths = []
 print("[INFO] loading dataset...")
 
 # Loop over all CSV files in the annotations directory
-for csvPath in paths.list_files(config.ANNOTS_PATH, validExts=(".csv")):
+for csvPath in paths.list_files(cf[0].ANNOTS_PATH, validExts=(".csv")):
 
     # Load the contents of the current CSV annotations file
     rows = open(csvPath).read().strip().split("\n")
@@ -73,7 +76,7 @@ for csvPath in paths.list_files(config.ANNOTS_PATH, validExts=(".csv")):
         (filename, startX, startY, endX, endY, label) = row
 
         # Derive the path to the input image 
-        imagePath = os.path.sep.join([config.IMAGES_PATH, label,
+        imagePath = os.path.sep.join([cf[0].IMAGES_PATH, label,
             filename])
         # Load the image (OpenCV format)
         image = cv2.imread(imagePath)
@@ -88,7 +91,7 @@ for csvPath in paths.list_files(config.ANNOTS_PATH, validExts=(".csv")):
         endY = float(endY) / h
 
         # Load the image and preprocess it
-        image = load_img(imagePath, target_size=(config.IMAGE_DIMS[1], config.IMAGE_DIMS[0]))
+        image = load_img(imagePath, target_size=(cf[0].IMAGE_DIMS[1], cf[0].IMAGE_DIMS[0]))
         image = img_to_array(image)
 
         # Extract set of class labels from the image path and update the
@@ -141,15 +144,15 @@ split = train_test_split(data, labels, bboxes, imagePaths,
 
 # Write the testing image paths to disk 
 print("[INFO] saving testing image paths...")
-f = open(config.TEST_PATHS, "w")
+f = open(cf[0].TEST_PATHS, "w")
 f.write("\n".join(testPaths))
 f.close()
 
 # Initialize the model 
 print("[INFO] compiling model...")
 model = SmallerVGGNet.build(
-    width=config.IMAGE_DIMS[1], height=config.IMAGE_DIMS[0],
-    depth=config.IMAGE_DIMS[2], numCoordinates=4, numClasses=len(lb.classes_))
+    width=cf[0].IMAGE_DIMS[1], height=cf[0].IMAGE_DIMS[0],
+    depth=cf[0].IMAGE_DIMS[2], numCoordinates=4, numClasses=len(lb.classes_))
 
 # Define a dictionary to set the loss methods -- categorical
 # cross-entropy for the class label head and mean absolute error
@@ -167,7 +170,7 @@ lossWeights = {
 }
 
 # Initialize the optimizer (SGD is sufficient)
-opt = Adam(learning_rate=config.INIT_LR, decay=config.INIT_LR / config.EPOCHS)
+opt = Adam(learning_rate=cf[0].INIT_LR, decay=cf[0].INIT_LR / cf[0].EPOCHS)
 
 # Compile the model 
 model.compile(loss=losses, optimizer=opt, metrics=["accuracy"],
@@ -194,23 +197,23 @@ print("[INFO] training network...")
 H = model.fit(
     trainImages, trainTargets,
     validation_data=(testImages, testTargets),
-    batch_size=config.BS,
-    epochs=config.EPOCHS,
+    batch_size=cf[0].BS,
+    epochs=cf[0].EPOCHS,
     verbose=10)
 
 # Save the model to disk
 print("[INFO] serializing network...")
-model.save(config.MODEL_PATH, save_format="h5")
+model.save(cf[0].MODEL_PATH, save_format="h5")
 
 # Save the multi-label binarizer to disk
 print("[INFO] serializing label binarizer...")
-f = open(config.LB_PATH, "wb")
+f = open(cf[0].LB_PATH, "wb")
 f.write(pickle.dumps(lb))
 f.close()
 
 # Plot the total loss, label loss, and bounding box loss
 lossNames = ["loss", "class_label_loss", "bounding_box_loss"]
-N = np.arange(0, config.EPOCHS)
+N = np.arange(0, cf[0].EPOCHS)
 plt.style.use("ggplot")
 (fig, ax) = plt.subplots(3, 1, figsize=(13, 13))
 
@@ -228,7 +231,7 @@ for (i, l) in enumerate(lossNames):
 
 # Save the losses figure and create a new figure for the accuracies
 plt.tight_layout()
-plotPath = os.path.sep.join([config.PLOTS_PATH, "losses.png"])
+plotPath = os.path.sep.join([cf[0].PLOTS_PATH, "losses.png"])
 plt.savefig(plotPath)
 plt.close()
 
@@ -245,6 +248,6 @@ plt.ylabel("Accuracy")
 plt.legend(loc="lower left")
 
 # Save the accuracies plot
-plotPath = os.path.sep.join([config.PLOTS_PATH, "accs.png"])
+plotPath = os.path.sep.join([cf[0].PLOTS_PATH, "accs.png"])
 plt.savefig(plotPath)
 
