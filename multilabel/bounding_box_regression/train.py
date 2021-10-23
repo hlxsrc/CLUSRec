@@ -18,7 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.metrics import multilabel_confusion_matrix
 from sklearn.metrics import confusion_matrix
-from cnn.smallervggnet_bbr import SmallerVGGNet
+from cnn.smallervggnet import SmallerVGGNet
 import matplotlib.pyplot as plt
 import matplotlib
 from imutils import paths
@@ -42,12 +42,12 @@ cf = []
 
 # Get configuration file
 if not args["config"]: 
-    cf[0] = "config"
+    config_file = "config"
 else:
-    cf[0] = args["config"]
+    cf = args["config"]
 
 # Import configuration file
-from configuration import cf[0]
+from configuration import cf
 
 # Disable eager execution
 tf.compat.v1.disable_eager_execution()
@@ -62,7 +62,7 @@ imagePaths = []
 print("[INFO] loading dataset...")
 
 # Loop over all CSV files in the annotations directory
-for csvPath in paths.list_files(cf[0].ANNOTS_PATH, validExts=(".csv")):
+for csvPath in paths.list_files(config_file.ANNOTS_PATH, validExts=(".csv")):
 
     # Load the contents of the current CSV annotations file
     rows = open(csvPath).read().strip().split("\n")
@@ -76,7 +76,7 @@ for csvPath in paths.list_files(cf[0].ANNOTS_PATH, validExts=(".csv")):
         (filename, startX, startY, endX, endY, label) = row
 
         # Derive the path to the input image 
-        imagePath = os.path.sep.join([cf[0].IMAGES_PATH, label,
+        imagePath = os.path.sep.join([config_file.IMAGES_PATH, label,
             filename])
         # Load the image (OpenCV format)
         image = cv2.imread(imagePath)
@@ -91,7 +91,7 @@ for csvPath in paths.list_files(cf[0].ANNOTS_PATH, validExts=(".csv")):
         endY = float(endY) / h
 
         # Load the image and preprocess it
-        image = load_img(imagePath, target_size=(cf[0].IMAGE_DIMS[1], cf[0].IMAGE_DIMS[0]))
+        image = load_img(imagePath, target_size=(config_file.IMAGE_DIMS[1], config_file.IMAGE_DIMS[0]))
         image = img_to_array(image)
 
         # Extract set of class labels from the image path and update the
@@ -134,7 +134,7 @@ for (i, label) in enumerate(lb.classes_):
 # Partition the data into training and testing splits using 80% of
 # the data for training and the remaining 20% for testing
 split = train_test_split(data, labels, bboxes, imagePaths, 
-        test_size=0.20, random_state=42)
+        test_size=config_file.TEST_SPLIT, random_state=42)
 
 # Unpack the data split
 (trainImages, testImages) = split[:2]
@@ -144,15 +144,15 @@ split = train_test_split(data, labels, bboxes, imagePaths,
 
 # Write the testing image paths to disk 
 print("[INFO] saving testing image paths...")
-f = open(cf[0].TEST_PATHS, "w")
+f = open(config_file.TEST_PATHS, "w")
 f.write("\n".join(testPaths))
 f.close()
 
 # Initialize the model 
 print("[INFO] compiling model...")
 model = SmallerVGGNet.build(
-    width=cf[0].IMAGE_DIMS[1], height=cf[0].IMAGE_DIMS[0],
-    depth=cf[0].IMAGE_DIMS[2], numCoordinates=4, numClasses=len(lb.classes_))
+    width=config_file.IMAGE_DIMS[1], height=config_file.IMAGE_DIMS[0],
+    depth=config_file.IMAGE_DIMS[2], numCoordinates=4, numClasses=len(lb.classes_))
 
 # Define a dictionary to set the loss methods -- categorical
 # cross-entropy for the class label head and mean absolute error
@@ -170,7 +170,7 @@ lossWeights = {
 }
 
 # Initialize the optimizer (SGD is sufficient)
-opt = Adam(learning_rate=cf[0].INIT_LR, decay=cf[0].INIT_LR / cf[0].EPOCHS)
+opt = Adam(learning_rate=config_file.LR, decay=config_file.LR / config_file.EPOCHS)
 
 # Compile the model 
 model.compile(loss=losses, optimizer=opt, metrics=["accuracy"],
@@ -197,23 +197,23 @@ print("[INFO] training network...")
 H = model.fit(
     trainImages, trainTargets,
     validation_data=(testImages, testTargets),
-    batch_size=cf[0].BS,
-    epochs=cf[0].EPOCHS,
+    batch_size=config_file.BS,
+    epochs=config_file.EPOCHS,
     verbose=10)
 
 # Save the model to disk
 print("[INFO] serializing network...")
-model.save(cf[0].MODEL_PATH, save_format="h5")
+model.save(config_file.MODEL_PATH, save_format="h5")
 
 # Save the multi-label binarizer to disk
 print("[INFO] serializing label binarizer...")
-f = open(cf[0].LB_PATH, "wb")
+f = open(config_file.LB_PATH, "wb")
 f.write(pickle.dumps(lb))
 f.close()
 
 # Plot the total loss, label loss, and bounding box loss
 lossNames = ["loss", "class_label_loss", "bounding_box_loss"]
-N = np.arange(0, cf[0].EPOCHS)
+N = np.arange(0, config_file.EPOCHS)
 plt.style.use("ggplot")
 (fig, ax) = plt.subplots(3, 1, figsize=(13, 13))
 
@@ -231,8 +231,7 @@ for (i, l) in enumerate(lossNames):
 
 # Save the losses figure and create a new figure for the accuracies
 plt.tight_layout()
-plotPath = os.path.sep.join([cf[0].PLOTS_PATH, "losses.png"])
-plt.savefig(plotPath)
+plt.savefig(config_file.LOSS_PATH)
 plt.close()
 
 # Create a new figure for the accuracies
@@ -248,6 +247,5 @@ plt.ylabel("Accuracy")
 plt.legend(loc="lower left")
 
 # Save the accuracies plot
-plotPath = os.path.sep.join([cf[0].PLOTS_PATH, "accs.png"])
-plt.savefig(plotPath)
+plt.savefig(config_file.ACCS_PATH)
 
