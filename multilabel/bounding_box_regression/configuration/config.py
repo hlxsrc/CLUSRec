@@ -15,7 +15,7 @@ LR = 1e-3
 # BS -> batch size
 BS = 32
 # Size of test in train_test_split
-TEST_SPLIT = 20
+TEST_SPLIT = 0.2
 
 # Define the base path to the input dataset
 BASE_PATH = "../../../datasets/" + DATASET
@@ -30,12 +30,12 @@ BASE_OUTPUT = "output/" + DATASET
 # Create string to store name with the next notation
 # NOTATION: TEST # + DESCRIPTION + DATASET + IMAGE_DIMENSIONS + EPOCHS +
 #           LEARNING RATE + BATCH SIZE + TEST SPLIT
-model_path = str(TEST) + "_model_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(TEST_SPLIT) + ".h5"
-lbin_path = str(TEST) + "_lbin_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(TEST_SPLIT) + ".pickle"
-plot_path = str(TEST) + "_plot_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(TEST_SPLIT) + ".png"
-accs_path = str(TEST) + "_accs_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(TEST_SPLIT) + ".png"
-loss_path = str(TEST) + "_loss_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(TEST_SPLIT) + ".png"
-test_path = str(TEST) + "_test_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(TEST_SPLIT) + ".txt"
+model_path = str(TEST) + "_model_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".h5"
+lbin_path = str(TEST) + "_lbin_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".pickle"
+plot_path = str(TEST) + "_plot_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
+accs_path = str(TEST) + "_accs_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
+loss_path = str(TEST) + "_loss_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
+test_path = str(TEST) + "_test_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".txt"
 
 # Define the path to the:
 #     output serialized model, labe binarizer, model training plots,
