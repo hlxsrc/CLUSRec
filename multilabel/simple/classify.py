@@ -1,7 +1,12 @@
 # USAGE
-# python classify.py --image tests/test_01.jpg
+# python classify.py --image tests/test_01.jpg --config config
 
-# import the necessary packages
+# Enable/disable debugging logs (0,1,2,3)
+# 0 -> all, 3 -> none
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# Import the necessary packages
 from configuration import config
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
