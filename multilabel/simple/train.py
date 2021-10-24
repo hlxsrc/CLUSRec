@@ -35,25 +35,25 @@ ap.add_argument("-c", "--config", required=True,
    help="Path to configuration file")
 args = vars(ap.parse_args())
 
-# List to store configuration file name
-cf = []
-
-# Get configuration file
-if not args["config"]: 
-    cf[0] = "config"
+# Handle configuration file (simple way)
+if not args["config"]:
+    config_file = "config"
 else:
-    cf[0] = args["config"]
+    config_file = args["config"]
 
 # Import configuration file
-from configuration import cf[0]
+cf = getattr(__import__("configuration", fromlist=[config_file]), config_file)
+
+# Configure output dir
+Path(cf.BASE_OUTPUT).mkdir(parents=True, exist_ok=True)
 
 # Disable eager execution
 tf.compat.v1.disable_eager_execution()
 
 # Grab the image paths and randomly shuffle them
-print("[INFO] path: ", cf[0].IMAGES_PATH)
+print("[INFO] path: ", cf.IMAGES_PATH)
 print("[INFO] loading images...")
-imagePaths = sorted(list(paths.list_images(cf[0].IMAGES_PATH)))
+imagePaths = sorted(list(paths.list_images(cf.IMAGES_PATH)))
 random.seed(42)
 random.shuffle(imagePaths)
 
@@ -68,7 +68,7 @@ for imagePath in imagePaths:
     # Load the image, pre-process it, and store it in the data list
     image = cv2.imread(imagePath)
     # Pre-process the image
-    image = cv2.resize(image, (cf[0].IMAGE_DIMS[1], cf[0].IMAGE_DIMS[0]))
+    image = cv2.resize(image, (cf.IMAGE_DIMS[1], cf.IMAGE_DIMS[0]))
     image = img_to_array(image)
     # Update data list
     data.append(image)
@@ -99,7 +99,7 @@ for (i, label) in enumerate(mlb.classes_):
 
 # Partition the data into training and testing splits
 split = train_test_split(data, labels,
-    imageNames, test_size=0.2, random_state=42)
+    imageNames, test_size=cf.TEST_SPLIT, random_state=42)
 
 # Unpack the data split
 (trainImages, testImages) = split[:2]
@@ -108,7 +108,7 @@ split = train_test_split(data, labels,
 
 # Write the testing image paths to disk
 print("[INFO] saving testing image paths...")
-f = open(cf[0].TEST_PATHS, "w")
+f = open(cf.TEST_PATH, "w")
 f.write("\n".join(testPaths))
 f.close()
 
@@ -120,12 +120,12 @@ aug = ImageDataGenerator(rotation_range=25, width_shift_range=0.1,
 # Initialize the model 
 print("[INFO] compiling model...")
 model = SmallerVGGNet.build(
-	width=cf[0].IMAGE_DIMS[1], height=cf[0].IMAGE_DIMS[0],
-	depth=cf[0].IMAGE_DIMS[2], classes=len(mlb.classes_),
+	width=cf.IMAGE_DIMS[1], height=cf.IMAGE_DIMS[0],
+	depth=cf.IMAGE_DIMS[2], classes=len(mlb.classes_),
 	finalAct="sigmoid")
 
 # Initialize the optimizer (SGD is sufficient)
-opt = Adam(lr=cf[0].INIT_LR, decay=cf[0].INIT_LR / cf[0].EPOCHS)
+opt = Adam(lr=cf.LR, decay=cf.LR / cf.EPOCHS)
 
 # Compile the model using binary cross-entropy
 model.compile(loss="binary_crossentropy", optimizer=opt,
@@ -134,18 +134,18 @@ model.compile(loss="binary_crossentropy", optimizer=opt,
 # Train the network
 print("[INFO] training network...")
 H = model.fit(
-	x=aug.flow(trainImages, trainLabels, batch_size=cf[0].BS),
+	x=aug.flow(trainImages, trainLabels, batch_size=cf.BS),
 	validation_data=(testImages, testLabels),
-	steps_per_epoch=len(trainImages) // cf[0].BS,
-	epochs=cf[0].EPOCHS, verbose=10)
+	steps_per_epoch=len(trainImages) // cf.BS,
+	epochs=cf.EPOCHS, verbose=10)
 
 # Save the model to disk
 print("[INFO] serializing network...")
-model.save(cf[0].MODEL_PATH, save_format="h5")
+model.save(cf.MODEL_PATH, save_format="h5")
 
 # Save the multi-label binarizer to disk
 print("[INFO] serializing label binarizer...")
-f = open(cf[0].LB_PATH, "wb")
+f = open(cf.LBIN_PATH, "wb")
 f.write(pickle.dumps(mlb))
 f.close()
 
@@ -174,7 +174,7 @@ ax.yaxis.set_ticklabels(['human', 'other'])
 # Plot the training loss and accuracy
 plt.style.use("ggplot")
 plt.figure()
-N = cf[0].EPOCHS
+N = cf.EPOCHS
 plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
 plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
 plt.plot(np.arange(0, N), H.history["accuracy"], label="train_acc")
@@ -183,5 +183,5 @@ plt.title("Training Loss and Accuracy")
 plt.xlabel("Epoch #")
 plt.ylabel("Loss/Accuracy")
 plt.legend(loc="upper left")
-plt.savefig(cf[0].PLOT_PATH)
+plt.savefig(cf.PLOT_PATH)
 plt.show()
