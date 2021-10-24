@@ -208,7 +208,7 @@ model.save(cf.MODEL_PATH, save_format="h5")
 
 # Save the multi-label binarizer to disk
 print("[INFO] serializing label binarizer...")
-f = open(cf.LB_PATH, "wb")
+f = open(cf.LBIN_PATH, "wb")
 f.write(pickle.dumps(lb))
 f.close()
 
