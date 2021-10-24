@@ -2,6 +2,11 @@
 # USAGE
 # python train.py --config <configuration_file>
 
+# Enable/disable debugging logs (0,1,2,3)
+# 0 -> all, 3 -> none
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 # Import the necessary packages
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.optimizers import Adam
