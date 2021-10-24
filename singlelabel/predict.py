@@ -1,5 +1,5 @@
 # USAGE:
-# python predict.py -i path/to/input
+# python predict.py --input path/to/input --config config
 
 # Enable/disable debugging logs (0,1,2,3)
 # 0 -> all, 3 -> none
@@ -7,7 +7,6 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # Import the necessary packages
-from configuration import config
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.preprocessing.image import load_img
 from tensorflow.keras.models import load_model
@@ -20,8 +19,20 @@ import cv2
 # Construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--input", required=True,
-    help="path to input image/text file of image filenames")
+        help="Path to input image/text file of image filenames")
+ap.add_argument("-c", "--config", required=True,
+        help="Path to configuration file")
 args = vars(ap.parse_args())
+
+# Handle configuration file (simple way)
+# If config is empty use default configuration file
+if not args["config"]:
+    config_file = "config"
+else:
+    config_file = args["config"]
+
+# Import configuration file
+cf = getattr(__import__("configuration", fromlist=[config_file]), config_file)
 
 # Determine the input file type
 filetype = mimetypes.guess_type(args["input"])[0]
@@ -40,19 +51,19 @@ if "text/plain" == filetype:
     for f in filenames:
 
         # Construct the full path to the image filename
-        p = os.path.sep.join([config.IMAGES_PATH, f])
+        p = os.path.sep.join([cf.IMAGES_PATH, f])
         # Update our image paths list
         imagePaths.append(p)
 
 # Load our trained bounding box regressor from disk
 print("[INFO] loading object detector...")
-model = load_model(config.MODEL_PATH)
+model = load_model(cf.MODEL_PATH)
 
 # Loop over the images
 for imagePath in imagePaths:
 
     # Load the input image (in Keras format) from disk 
-    image = load_img(imagePath, target_size=(config.IMAGE_DIMS[1], config.IMAGE_DIMS[0]))
+    image = load_img(imagePath, target_size=(cf.IMAGE_DIMS[1], cf.IMAGE_DIMS[0]))
     # Preprocess image scaling the pixel intensities to the range [0, 1]
     image = img_to_array(image) / 255.0
     image = np.expand_dims(image, axis=0)
