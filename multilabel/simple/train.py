@@ -19,6 +19,7 @@ from sklearn.metrics import confusion_matrix
 from cnn.smallervggnet import SmallerVGGNet
 import matplotlib.pyplot as plt
 import matplotlib
+from pathlib import Path
 from imutils import paths
 import tensorflow as tf
 import seaborn as sns
@@ -125,7 +126,7 @@ model = SmallerVGGNet.build(
 	finalAct="sigmoid")
 
 # Initialize the optimizer (SGD is sufficient)
-opt = Adam(lr=cf.LR, decay=cf.LR / cf.EPOCHS)
+opt = Adam(learning_rate=cf.LR, decay=cf.LR / cf.EPOCHS)
 
 # Compile the model using binary cross-entropy
 model.compile(loss="binary_crossentropy", optimizer=opt,
@@ -170,6 +171,7 @@ ax.set_ylabel('True labels')
 ax.set_title('Confusion Matrix')
 ax.xaxis.set_ticklabels(['human', 'other'])
 ax.yaxis.set_ticklabels(['human', 'other'])
+plt.savefig(cf.CMAT_PATH)
 
 # Plot the training loss and accuracy
 plt.style.use("ggplot")
