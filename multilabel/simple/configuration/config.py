@@ -5,7 +5,7 @@ import os
 # TEST counter
 TEST = 1
 # DATASET name
-DATASET = "roi"
+DATASET = "roi_v2"
 # IMAGE_DIMS -> image dimesions (pre-processing)
 IMAGE_DIMS = (96, 96, 3)
 # EPOCHS -> in order to learn patterns using backpropagation (100 or 125)
@@ -33,6 +33,7 @@ BASE_OUTPUT = "output/" + DATASET
 model_path = str(TEST) + "_model_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".h5"
 lbin_path = str(TEST) + "_lbin_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".pickle"
 plot_path = str(TEST) + "_plot_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
+cmat_path = str(TEST) + "_cmat_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
 accs_path = str(TEST) + "_accs_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
 loss_path = str(TEST) + "_loss_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
 test_path = str(TEST) + "_test_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".txt"
@@ -43,6 +44,7 @@ test_path = str(TEST) + "_test_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + st
 MODEL_PATH = os.path.sep.join([BASE_OUTPUT, model_path])
 LBIN_PATH = os.path.sep.join([BASE_OUTPUT, lbin_path])
 PLOT_PATH = os.path.sep.join([BASE_OUTPUT, plot_path])
+CMAT_PATH = os.path.sep.join([BASE_OUTPUT, cmat_path])
 ACCS_PATH = os.path.sep.join([BASE_OUTPUT, accs_path])
 LOSS_PATH = os.path.sep.join([BASE_OUTPUT, loss_path])
 TEST_PATH = os.path.sep.join([BASE_OUTPUT, test_path])
