@@ -51,7 +51,7 @@ if "text/plain" == filetype:
     for f in filenames:
 
         # Construct the full path to the image filename
-        p = os.path.sep.join([cf.IMAGES_PATH, f])
+        p = os.path.sep.join([cf.BASE, f])
         # Update our image paths list
         imagePaths.append(p)
 

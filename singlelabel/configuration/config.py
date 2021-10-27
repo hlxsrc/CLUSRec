@@ -18,7 +18,8 @@ BS = 32
 TEST_SPLIT = 0.2
 
 # Define the base path to the input dataset
-BASE_PATH = "../../../datasets/" + DATASET
+BASE = "../../datasets/" 
+BASE_PATH = "../../datasets/" + DATASET
 
 # Add dir to complete base path
 IMAGES_PATH = os.path.sep.join([BASE_PATH, "images"])
