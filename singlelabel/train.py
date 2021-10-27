@@ -20,6 +20,7 @@ from sklearn.metrics import multilabel_confusion_matrix
 from sklearn.metrics import confusion_matrix
 from cnn.smallervggnet import SmallerVGGNet
 import matplotlib.pyplot as plt
+from pathlib import Path
 from imutils import paths
 import tensorflow as tf
 import seaborn as sns
@@ -51,44 +52,49 @@ Path(cf.BASE_OUTPUT).mkdir(parents=True, exist_ok=True)
 # Disable eager execution
 tf.compat.v1.disable_eager_execution()
 
-# Load the contents of the CSV annotations file
-print("[INFO] loading dataset...")
-rows = open(cf.ANNOTS_PATH).read().strip().split("\n")
-
 # Initialize data (images), targets (bounding boxes) and filenames (images)
 data = []
 targets = []
 imageNames = []
 
-# Loop over the rows
-for row in rows:
+# Loop over all CSV files in the annotations directory
+print("[INFO] loading dataset...")
+for csvPath in paths.list_files(cf.ANNOTS_PATH, validExts=(".csv")):
 
-    # Break the row into the filename and bounding box coordinates
-    row = row.split(",")
-    (imageName, startX, startY, endX, endY) = row
+    # Load the contents of the current CSV annotations file
+    rows = open(csvPath).read().strip().split("\n")
 
-    # Derive the path to the input image
-    imagePath = os.path.sep.join([cf.IMAGES_PATH, imageName])
-    # Load the image (in OpenCV format)
-    image = cv2.imread(imagePath)
-    # Grab its dimensions
-    (h, w) = image.shape[:2]
+    # Loop over the rows
+    for row in rows:
 
-    # Scale the bounding box coordinates relative to the spatial
-    # dimensions of the input image
-    startX = float(startX) / w
-    startY = float(startY) / h
-    endX = float(endX) / w
-    endY = float(endY) / h
+        # Break the row into the filename and bounding box coordinates
+        row = row.split(",")
+        print(row)
+        (imageName, startX, startY, endX, endY, label) = row
 
-    # Load the image and preprocess it
-    image = load_img(imagePath, target_size=(cf.IMAGE_DIMS[1], cf.IMAGE_DIMS[0]))
-    image = img_to_array(image)
+        # Derive the path to the input image
+        imagePath = os.path.sep.join([cf.IMAGES_PATH, label, 
+            imageName])
+        # Load the image (in OpenCV format)
+        image = cv2.imread(imagePath)
+        # Grab its dimensions
+        (h, w) = image.shape[:2]
 
-    # Update our list of data, targets, and filenames
-    data.append(image)
-    targets.append((startX, startY, endX, endY))
-    imageNames.append(imageName)
+        # Scale the bounding box coordinates relative to the spatial
+        # dimensions of the input image
+        startX = float(startX) / w
+        startY = float(startY) / h
+        endX = float(endX) / w
+        endY = float(endY) / h
+
+        # Load the image and preprocess it
+        image = load_img(imagePath, target_size=(cf.IMAGE_DIMS[1], cf.IMAGE_DIMS[0]))
+        image = img_to_array(image)
+
+        # Update our list of data, targets, and filenames
+        data.append(image)
+        targets.append((startX, startY, endX, endY))
+        imageNames.append(imageName)
 
 # Scale the raw pixel intensities to the range [0, 1]
 data = np.array(data, dtype="float32") / 255.0
