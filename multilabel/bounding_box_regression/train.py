@@ -145,7 +145,7 @@ split = train_test_split(data, labels, bboxes, imagePaths,
 
 # Write the testing image paths to disk 
 print("[INFO] saving testing image paths...")
-f = open(cf.TEST_PATHS, "w")
+f = open(cf.TEST_PATH, "w")
 f.write("\n".join(testPaths))
 f.close()
 
