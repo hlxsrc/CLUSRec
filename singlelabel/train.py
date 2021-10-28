@@ -13,7 +13,6 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.preprocessing.image import load_img
-from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.metrics import multilabel_confusion_matrix
@@ -69,7 +68,6 @@ for csvPath in paths.list_files(cf.ANNOTS_PATH, validExts=(".csv")):
 
         # Break the row into the filename and bounding box coordinates
         row = row.split(",")
-        print(row)
         (imageName, startX, startY, endX, endY, label) = row
 
         # Derive the path to the input image
@@ -115,20 +113,15 @@ f = open(cf.TEST_PATH, "w")
 f.write("\n".join(testPaths))
 f.close()
 
-# Construct the image generator for data augmentation
-#aug = ImageDataGenerator(rotation_range=25, width_shift_range=0.1,
-#    height_shift_range=0.1, shear_range=0.2, zoom_range=0.2,
-#    horizontal_flip=True, fill_mode="nearest")
-
 # Initialize the model
 print("[INFO] compiling model...")
 model = SmallerVGGNet.build(
     width=cf.IMAGE_DIMS[1], height=cf.IMAGE_DIMS[0],
-    depth=cf.IMAGE_DIMS[2], classes=1,
-    finalAct="sigmoid")
+    depth=cf.IMAGE_DIMS[2], numCoordinates=4)
 
 # Initialize the optimizer (SGD)
-opt = Adam(lr=cf.LR, decay=cf.LR / cf.EPOCHS)
+#opt = Adam(lr=cf.LR, decay=cf.LR / cf.EPOCHS)
+opt = Adam(lr=cf.LR)
 
 # Compile the model using categorical cross-entropy
 # model.compile(loss="categorical_crossentropy", optimizer=opt,
@@ -146,7 +139,7 @@ H = model.fit(
     validation_data=(testImages, testTargets),
     batch_size=cf.BS,
     epochs=cf.EPOCHS, 
-    verbose=1)
+    verbose=10)
 
 # Save the model to disk
 print("[INFO] serializing network...")

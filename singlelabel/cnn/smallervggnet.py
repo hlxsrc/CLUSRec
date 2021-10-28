@@ -11,7 +11,8 @@
 # As seen on Pyimagesearch
 
 # import the necessary packages
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPooling2D
@@ -24,78 +25,91 @@ from tensorflow.keras import backend as K
 # create SmallerVGGNet class
 class SmallerVGGNet:
 
-    # define build function 
-    # receives: width, height, depth, classes and
+    @staticmethod
+    def build_bb_branch(inputShape, numCoordinates, chanDim=-1):
+
+        # CONV => RELU => POOL
+        # CONV layer with 32 filters with a 3x3 kernel
+        #bboxHead = Conv2D(32, (3, 3), padding="same")(inputShape)
+        # CONV layer with 64 filters with a 3x3 kernel
+        bboxHead = Conv2D(64, (3, 3), padding="same")(inputShape)
+        # RELU activation
+        bboxHead = Activation("relu")(bboxHead)
+        # apply batch normalization
+        bboxHead = BatchNormalization(axis=chanDim)(bboxHead)
+        # apply max pooling
+        bboxHead = MaxPooling2D(pool_size=(2, 2))(bboxHead)
+        # apply dropout to reduce overfitting
+        bboxHead = Dropout(0.25)(bboxHead)
+
+        # Two sets of (CONV => RELU) * 2 => POOL
+        # reduce spatial size but increasing depth
+
+        # (CONV => RELU) * 2 => POOL
+        #bboxHead = Conv2D(64, (3, 3), padding="same")(bboxHead)
+        bboxHead = Conv2D(128, (3, 3), padding="same")(bboxHead)
+        bboxHead = Activation("relu")(bboxHead)
+        bboxHead = BatchNormalization(axis=chanDim)(bboxHead)
+        #bboxHead = Conv2D(64, (3, 3), padding="same")(bboxHead)
+        bboxHead = Conv2D(128, (3, 3), padding="same")(bboxHead)
+        bboxHead = Activation("relu")(bboxHead)
+        bboxHead = BatchNormalization(axis=chanDim)(bboxHead)
+        bboxHead = MaxPooling2D(pool_size=(2, 2))(bboxHead)
+        bboxHead = Dropout(0.25)(bboxHead)
+
+        # (CONV => RELU) * 2 => POOL
+        #bboxHead = Conv2D(128, (3, 3), padding="same")(bboxHead)
+        bboxHead = Conv2D(256, (3, 3), padding="same")(bboxHead)
+        bboxHead = Activation("relu")(bboxHead)
+        bboxHead = BatchNormalization(axis=chanDim)(bboxHead)
+        #bboxHead = Conv2D(128, (3, 3), padding="same")(bboxHead)
+        bboxHead = Conv2D(256, (3, 3), padding="same")(bboxHead)
+        bboxHead = Activation("relu")(bboxHead)
+        bboxHead = BatchNormalization(axis=chanDim)(bboxHead)
+        bboxHead = MaxPooling2D(pool_size=(2, 2))(bboxHead)
+        bboxHead = Dropout(0.25)(bboxHead)
+
+        # Construct a fully-connected layer
+        # to output the predicted bounding box coordinates
+        bboxHead = Flatten()(bboxHead)
+        bboxHead = Dense(128, activation="relu")(bboxHead)
+        bboxHead = Dense(64, activation="relu")(bboxHead)
+        bboxHead = Dense(32, activation="relu")(bboxHead)
+        bboxHead = Dense(numCoordinates, activation="sigmoid",
+                name="bounding_box")(bboxHead)
+
+        # Return the bounding box prediction sub-network
+        return bboxHead
+
+    # Define build function
+    # Receives: width, height, depth, classes and
     #   the activation function
     @staticmethod
-    def build(width, height, depth, classes, finalAct="softmax"):
-                
-        # initialize the model along with the input shape to be
+    def build(width, height, depth, numCoordinates):
+
+        # Initialize the model along with the input shape to be
         # "channels last" and the channels dimension itself
-        model = Sequential()
         inputShape = (height, width, depth)
         chanDim = -1
 
-        # if we are using "channels first", update the input shape
+        # If we are using "channels first", update the input shape
         # and channels dimension
         if K.image_data_format() == "channels_first":
             inputShape = (depth, height, width)
             chanDim = 1
 
-        # CONV => RELU => POOL
-        # CONV layer with 32 filters with a 3x3 kernel
-        model.add(Conv2D(32, (3, 3), padding="same",
-            input_shape=inputShape))
-        # RELU activation
-        model.add(Activation("relu"))
-        # apply batch normalization
-        model.add(BatchNormalization(axis=chanDim))
-        # apply max pooling
-        model.add(MaxPooling2D(pool_size=(3, 3)))
-        # apply dropout to reduce overfitting
-        model.add(Dropout(0.25))
+        # Construct the "bb" sub-network
+        inputs = Input(shape=inputShape)
+        bbBranch = SmallerVGGNet.build_bb_branch(inputs,
+                numCoordinates, chanDim=chanDim)
 
-        # two sets of (CONV => RELU) * 2 => POOL
-        # reduce spatial size but increasing depth
+        # Create the model using our input (the batch of images) and
+        # two separate outputs -- one for the bounding box
+        # branch and another for the classes branch, respectively
+        model = Model(
+            inputs=inputs,
+            outputs=bbBranch,
+            name="krbynet")
 
-        # (CONV => RELU) * 2 => POOL
-        model.add(Conv2D(64, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
-        model.add(Conv2D(64, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Dropout(0.25))
-
-        # (CONV => RELU) * 2 => POOL
-        model.add(Conv2D(128, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
-        model.add(Conv2D(128, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Dropout(0.25))
-
-        # first (and only) set of FC => RELU layers
-        model.add(Flatten())
-        #model.add(Dense(1024))
-        #model.add(Activation("relu"))
-        #model.add(BatchNormalization())
-        #model.add(Dropout(0.5))
-        model.add(Dense(128))
-        model.add(Activation("relu"))
-        model.add(Dense(64))
-        model.add(Activation("relu"))
-        model.add(Dense(32))
-        model.add(Activation("relu"))
-        model.add(Dense(4))
-        model.add(Activation("sigmoid"))
-
-        # softmax classifier
-        #model.add(Dense(classes))
-        #model.add(Activation("softmax"))
-
-        # return the constructed network architecture
+        # Return the constructed network architecture
         return model
