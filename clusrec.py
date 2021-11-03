@@ -139,9 +139,61 @@ for imagePath in imagePaths:
         cv2.imshow("Top", top)
         cv2.waitKey(0)
 
+        # Resize top image
+        top = cv2.resize(top, 
+                (CLOTHES_IMG_DIM[1], CLOTHES_IMG_DIM[0]))
+        # Scale pixel intensities to the range [0, 1]
+        top = img_to_array(top) / 255.0
+        top = np.expand_dims(top, axis=0)
+
+        # Predict top clothes
+        print("[INFO] Detecting top ...")
+        top_preds = clothes_model.predict(top)[0]
+
+        # Find indexes of two class labels (largest probability)
+        idxs = np.argsort(top_preds)[::-1][:2]
+
+        # Loop over the indexes of the high confidence class labels
+        for (i, j) in enumerate(idxs):
+
+            # Build the label and draw the label on the image
+            label = "{}: {:.2f}%".format(clothes_lb.classes_[j],
+                    top_preds[j] * 100)
+            cv2.putText(image, label, (10, (i * 30) + 25), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+            print(label)
+
         # Get bottom prediction
         bottom = roi[int(roi.shape[0]*.40):roi.shape[0]]
 
         # Show bottom
         cv2.imshow("Bottom", bottom)
+        cv2.waitKey(0)
+
+        # Resize bottom image
+        bottom = cv2.resize(bottom, 
+                (CLOTHES_IMG_DIM[1], CLOTHES_IMG_DIM[0]))
+        # Scale pixel intensities to the range [0, 1]
+        bottom = img_to_array(bottom) / 255.0
+        bottom = np.expand_dims(bottom, axis=0)
+
+        # Predict bottom clothes
+        print("[INFO] Detecting bottom ...")
+        bottom_preds = clothes_model.predict(bottom)[0]
+
+        # Find indexes of two class labels (largest probability)
+        idxs = np.argsort(bottom_preds)[::-1][:2]
+
+        # Loop over the indexes of the high confidence class labels
+        for (i, j) in enumerate(idxs):
+
+            # Build the label and draw the label on the image
+            label = "{}: {:.2f}%".format(clothes_lb.classes_[j], 
+                    bottom_preds[j] * 100)
+            cv2.putText(image, label, (10, (i * 30) + 85),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            print(label)
+
+        # Show final image
+        cv2.imshow("Final", image)
         cv2.waitKey(0)
