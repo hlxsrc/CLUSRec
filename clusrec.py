@@ -128,3 +128,20 @@ for imagePath in imagePaths:
         # Show the region of interest
         cv2.imshow("ROI", roi)
         cv2.waitKey(0)
+
+        # PREDICT CLOTHES
+        print("[INFO] Detecting clothes...")
+
+        # Get top prediction
+        top = roi[int(roi.shape[0]-roi.shape[0]):int(roi.shape[0]*.60)]
+
+        # Show top
+        cv2.imshow("Top", top)
+        cv2.waitKey(0)
+
+        # Get bottom prediction
+        bottom = roi[int(roi.shape[0]*.40):roi.shape[0]]
+
+        # Show bottom
+        cv2.imshow("Bottom", bottom)
+        cv2.waitKey(0)
