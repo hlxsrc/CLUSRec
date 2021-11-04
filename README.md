@@ -10,24 +10,25 @@ This is the repository containing all the code for my final Uni project / thesis
 ```
 |-- CLUSRec/
 |   |-- helpers/
-|   |-- multilabel/
-|   |   |-- simple/
-|   |   |   |-- cnn/
-|   |   |   |   |-- smallervggnet.py
-|   |   |   |-- configuration/
-|   |   |   |-- predict.py
-|   |   |   |-- train.py
+|   |-- clothes_detection/
+|   |   |-- cnn/
+|   |   |   |-- smallervggnet.py
+|   |   |-- configuration/
+|   |   |-- classify.py
+|   |   |-- train.py
+|   |-- human_detection/
 |   |   |-- bounding_box_regression/
 |   |   |   |-- cnn/
 |   |   |   |   |-- smallervggnet.py
 |   |   |   |-- configuration/
 |   |   |   |-- predict.py
 |   |   |   |-- train.py
-|   |-- singlelabel/
-|   |   |-- cnn/
-|   |   |   |-- smallervggnet.py
-|   |   |-- predict.py
-|   |   |-- train.py
+|   |   |-- single_label/
+|   |   |   |-- cnn/
+|   |   |   |   |-- smallervggnet.py
+|   |   |   |-- configuration/
+|   |   |   |-- predict.py
+|   |   |   |-- train.py
 |   |-- requirements/
 |   |   |-- install.sh
 |   |   |-- apt.txt
