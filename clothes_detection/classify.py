@@ -1,5 +1,5 @@
 # USAGE
-# python classify.py --image tests/test_01.jpg --configname <configuration>
+# python classify.py --input tests/test_01.jpg --configname <configuration>
 
 # Enable/disable debugging logs (0,1,2,3)
 # 0 -> all, 3 -> none
