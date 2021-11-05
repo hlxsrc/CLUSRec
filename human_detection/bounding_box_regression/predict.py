@@ -1,5 +1,5 @@
 # USAGE:
-# python predict.py --input path/to/input --config config
+# python predict.py --input path/to/input --configname <configuration>
 
 # Enable/disable debugging logs (0,1,2,3)
 # 0 -> all, 3 -> none
@@ -17,23 +17,24 @@ import imutils
 import pickle
 import cv2
 
+# Import configuration file
+from configuration import config
+
 # Construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--input", required=True,
         help="path to input image/text file of image paths")
-ap.add_argument("-c", "--config", required=True,
-        help="Path to configuration file")
+ap.add_argument("-cn", "--configname", required=True,
+   help="Name of desired configuration")
+ap.add_argument("-cf", "--configfile", required=False,
+   help="Name of configuration file")
 args = vars(ap.parse_args())
 
-# Handle configuration file (simple way)
-# If config is empty use default configuration file
-if not args["config"]:
-    config_file = "config"
-else:
-    config_file = args["config"]
+# Get selected configuration as dictionary
+config_dict = config.read_configuration(config=args["configname"])
 
-# Import configuration file
-cf = getattr(__import__("configuration", fromlist=[config_file]), config_file)
+# Create output paths
+paths_dict = config.create_paths(args["configname"], config_dict)
 
 # Determine the input file type
 filetype = mimetypes.guess_type(args["input"])[0]
@@ -51,22 +52,23 @@ if "text/plain" == filetype:
     # Loop over the filenames
     for f in filenames:
 
-        # Construct the full path to the image filename
-        p = os.path.sep.join([cf.BASE, f])
         # Update our image paths list
-        imagePaths.append(p)
+        imagePaths.append(f)
 
 # Load the object detector and label binarizer from disk
 print("[INFO] loading object detector...")
-model = load_model(cf.MODEL_PATH)
-lb = pickle.loads(open(cf.LBIN_PATH, "rb").read())
+model = load_model(paths_dict["model"])
+lb = pickle.loads(open(paths_dict["binarizer"], "rb").read())
+
+# Get image dimensions
+IMAGE_DIMS = config_dict["imageDimensions"]
 
 # Loop over the images 
 for imagePath in imagePaths:
 
     # Load the input image (in Keras format) from disk
     print("[INFO] image: ", imagePath)
-    image = load_img(imagePath, target_size=(cf.IMAGE_DIMS[1], cf.IMAGE_DIMS[0]))
+    image = load_img(imagePath, target_size=(IMAGE_DIMS[1], IMAGE_DIMS[0]))
     # Preprocess image scaling the pixel intensities to the range [0, 1]
     image = img_to_array(image) / 255.0
     image = np.expand_dims(image, axis=0)

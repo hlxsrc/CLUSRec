@@ -1,7 +1,7 @@
 # This scripts creates a CNN model using VGGNet to predict 
 # the class of images using bouding box regression
 # USAGE
-# python train.py --config config
+# python train.py --configname <configuration>
 
 # Enable/disable debugging logs (0,1,2,3)
 # 0 -> all, 3 -> none
@@ -30,23 +30,25 @@ import random
 import pickle
 import cv2
 
+# Import configuration file
+from configuration import config
+
 # Construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-c", "--config", required=True,
-   help="Path to configuration file")
+ap.add_argument("-cn", "--configname", required=True,
+   help="Name of desired configuration")
+ap.add_argument("-cf", "--configfile", required=False,
+   help="Name of configuration file")
 args = vars(ap.parse_args())
 
-# Handle configuration file (simple way)
-if not args["config"]:
-    config_file = "config"
-else:
-    config_file = args["config"]
+# Get selected configuration as dictionary
+config_dict = config.read_configuration(config=args["configname"])
 
-# Import configuration file
-cf = getattr(__import__("configuration", fromlist=[config_file]), config_file)
+# Create output paths
+paths_dict = config.create_paths(args["configname"], config_dict)
 
 # Configure output dir
-Path(cf.BASE_OUTPUT).mkdir(parents=True, exist_ok=True)
+Path(paths_dict["output"]).mkdir(parents=True, exist_ok=True)
 
 # Disable eager execution
 tf.compat.v1.disable_eager_execution()
@@ -56,9 +58,12 @@ data = []
 targets = []
 imageNames = []
 
+# Get image dimensions
+IMAGE_DIMS = config_dict["imageDimensions"]
+
 # Loop over all CSV files in the annotations directory
 print("[INFO] loading dataset...")
-for csvPath in paths.list_files(cf.ANNOTS_PATH, validExts=(".csv")):
+for csvPath in paths.list_files(paths_dict["annotations"], validExts=(".csv")):
 
     # Load the contents of the current CSV annotations file
     rows = open(csvPath).read().strip().split("\n")
@@ -71,7 +76,7 @@ for csvPath in paths.list_files(cf.ANNOTS_PATH, validExts=(".csv")):
         (imageName, startX, startY, endX, endY, label) = row
 
         # Derive the path to the input image
-        imagePath = os.path.sep.join([cf.IMAGES_PATH, label, 
+        imagePath = os.path.sep.join([paths_dict["images"], label, 
             imageName])
         # Load the image (in OpenCV format)
         image = cv2.imread(imagePath)
@@ -86,7 +91,7 @@ for csvPath in paths.list_files(cf.ANNOTS_PATH, validExts=(".csv")):
         endY = float(endY) / h
 
         # Load the image and preprocess it
-        image = load_img(imagePath, target_size=(cf.IMAGE_DIMS[1], cf.IMAGE_DIMS[0]))
+        image = load_img(imagePath, target_size=(IMAGE_DIMS[1], IMAGE_DIMS[0]))
         image = img_to_array(image)
 
         # Update our list of data, targets, and filenames
@@ -99,8 +104,8 @@ data = np.array(data, dtype="float32") / 255.0
 targets = np.array(targets, dtype="float32")
 
 # Partition the data into training and testing splits 
-split = train_test_split(data, targets,
-    imageNames, test_size=cf.TEST_SPLIT, random_state=42)
+split = train_test_split(data, targets, imageNames, 
+        test_size=config_dict["testSplit"], random_state=42)
 
 # Unpack the data split
 (trainImages, testImages) = split[:2]
@@ -109,19 +114,19 @@ split = train_test_split(data, targets,
 
 # Write testing image paths to disk
 print("[INFO] saving testing image paths...")
-f = open(cf.TEST_PATH, "w")
+f = open(paths_dict["test"], "w")
 f.write("\n".join(testPaths))
 f.close()
 
 # Initialize the model
 print("[INFO] compiling model...")
 model = SmallerVGGNet.build(
-    width=cf.IMAGE_DIMS[1], height=cf.IMAGE_DIMS[0],
-    depth=cf.IMAGE_DIMS[2], numCoordinates=4)
+    width=IMAGE_DIMS[1], height=IMAGE_DIMS[0],
+    depth=IMAGE_DIMS[2], numCoordinates=4)
 
 # Initialize the optimizer (SGD)
 #opt = Adam(lr=cf.LR, decay=cf.LR / cf.EPOCHS)
-opt = Adam(lr=cf.LR)
+opt = Adam(lr=config_dict["learningRate"])
 
 # Compile the model using categorical cross-entropy
 # model.compile(loss="categorical_crossentropy", optimizer=opt,
@@ -137,16 +142,16 @@ print("[INFO] training bounding box regressor...")
 H = model.fit(
     trainImages, trainTargets,
     validation_data=(testImages, testTargets),
-    batch_size=cf.BS,
-    epochs=cf.EPOCHS, 
+    batch_size=config_dict["batchSize"],
+    epochs=config_dict["epochs"],
     verbose=10)
 
 # Save the model to disk
 print("[INFO] serializing network...")
-model.save(cf.MODEL_PATH, save_format="h5")
+model.save(paths_dict["model"], save_format="h5")
 
 # Plot the model training history
-N = cf.EPOCHS
+N = config_dict["epochs"]
 plt.style.use("ggplot")
 plt.figure()
 plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
@@ -155,4 +160,4 @@ plt.title("Bounding Box Regression Loss on Training Set")
 plt.xlabel("Epoch #")
 plt.ylabel("Loss")
 plt.legend(loc="lower left")
-plt.savefig(cf.PLOT_PATH)
+plt.savefig(paths_dict["plot"])
