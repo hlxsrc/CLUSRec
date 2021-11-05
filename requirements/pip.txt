@@ -9,3 +9,4 @@ matplotlib
 progressbar2
 beautifulsoup4
 pandas
+pyyaml
