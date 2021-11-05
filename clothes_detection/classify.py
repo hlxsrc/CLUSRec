@@ -1,5 +1,5 @@
 # USAGE
-# python classify.py --image tests/test_01.jpg --config config
+# python classify.py --image tests/test_01.jpg --configname <configuration>
 
 # Enable/disable debugging logs (0,1,2,3)
 # 0 -> all, 3 -> none
@@ -17,23 +17,24 @@ import pickle
 import cv2
 import os
 
+# Import configuration file
+from configuration import config
+
 # Construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--input", required=True,
-        help="Path to input image/text file of image paths")
-ap.add_argument("-c", "--config", required=True,
-        help="Path to configuration file")
+   help="Path to input image/text file of image paths")
+ap.add_argument("-cn", "--configname", required=True,
+   help="Name of desired configuration")
+ap.add_argument("-cf", "--configfile", required=False,
+   help="Name of configuration file")
 args = vars(ap.parse_args())
 
-# Handle configuration file (simple way)
-# If config is empty use default configuration file
-if not args["config"]:
-    config_file = "config"
-else:
-    config_file = args["config"]
+# Get selected configuration as dictionary
+config_dict = config.read_configuration(config=args["configname"])
 
-# Import configuration file
-cf = getattr(__import__("configuration", fromlist=[config_file]), config_file)
+# Create output paths
+paths_dict = config.create_paths(args["configname"], config_dict)
 
 # Determine the input file type
 # Assume we are working with single input image
@@ -48,9 +49,11 @@ if "text/plain" == filetype:
 
 # Load our object detector and label binarizer from disk
 print("[INFO] loading network...")
-model = load_model(cf.MODEL_PATH)
-lb = pickle.loads(open(cf.LBIN_PATH, "rb").read())
+model = load_model(paths_dict["model"])
+lb = pickle.loads(open(paths_dict["binarizer"], "rb").read())
 
+# Get image dimensions
+IMAGE_DIMS = config_dict["imageDimensions"]
 total = 0
 
 # Loop over the test images
@@ -61,7 +64,7 @@ for imagePath in imagePaths:
     output = imutils.resize(image, width=400)
  
     # Pre-process the image for classification
-    image = cv2.resize(image, (cf.IMAGE_DIMS[1], cf.IMAGE_DIMS[0]))
+    image = cv2.resize(image, (IMAGE_DIMS[1], IMAGE_DIMS[0]))
     image = image.astype("float") / 255.0
     image = img_to_array(image)
     image = np.expand_dims(image, axis=0)
@@ -102,6 +105,6 @@ for imagePath in imagePaths:
         break
 
 # Print the total faces saved and do a bit of cleanup
-print("[INFO] {} face images stored".format(total))
+print("[INFO] {} images stored".format(total))
 print("[INFO] cleaning up...")
 cv2.destroyAllWindows()
