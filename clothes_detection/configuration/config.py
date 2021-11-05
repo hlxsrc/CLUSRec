@@ -1,50 +1,88 @@
 # Import the necessary packages
 import os
+import yaml
 
-# Initialize variables
-# TEST counter
-TEST = 1
-# DATASET name
-DATASET = "roi_v2"
-# IMAGE_DIMS -> image dimesions (pre-processing)
-IMAGE_DIMS = (96, 96, 3)
-# EPOCHS -> in order to learn patterns using backpropagation (100 or 125)
-EPOCHS = 100
-# LR -> initial learning rate
-LR = 1e-3
-# BS -> batch size
-BS = 32
-# Size of test in train_test_split
-TEST_SPLIT = 0.2
 
-# Define the base path to the input dataset
-BASE_PATH = "../../../datasets/" + DATASET
+# Read configuration file
+# Receives: 
+#   config_file: name of the configuration file
+#                default value is config.yaml
+#   config: name of specific configuration
+#           default is 'base' configuration
+# Returns:
+#   configuration: content of selected configuration
+#                  from the configuration yaml
+# This function assumes the configuration file 
+# is in the same directory level
+def read_configuration(config_file='configuration/config.yaml', 
+        config='base'):
 
-# Add dir to complete base path
-IMAGES_PATH = os.path.sep.join([BASE_PATH, "images"])
-ANNOTS_PATH = os.path.sep.join([BASE_PATH, "annotations"])
+    # Read configuration file
+    stream = open(config_file, 'r')
+    configurations = yaml.safe_load(stream)
 
-# Define the path to the base output directory
-BASE_OUTPUT = "output/" + DATASET
+    # Get specific configuration
+    configuration = configurations['configuration'][config]
 
-# Create string to store name with the next notation
-# NOTATION: TEST # + DESCRIPTION + DATASET + IMAGE_DIMENSIONS + EPOCHS +
-#           LEARNING RATE + BATCH SIZE + TEST SPLIT
-model_path = str(TEST) + "_model_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".h5"
-lbin_path = str(TEST) + "_lbin_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".pickle"
-plot_path = str(TEST) + "_plot_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
-cmat_path = str(TEST) + "_cmat_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
-accs_path = str(TEST) + "_accs_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
-loss_path = str(TEST) + "_loss_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".png"
-test_path = str(TEST) + "_test_" + DATASET + "_" + str(IMAGE_DIMS[0]) + "_" + str(EPOCHS) + "_" + str(LR) + "_" + str(BS) + "_" + str(int(TEST_SPLIT*100)) + ".txt"
+    # Return configuration as dictionary
+    return configuration
 
-# Define the path to the:
-#     output serialized model, labe binarizer, model training plots,
-#     and testing image filenames
-MODEL_PATH = os.path.sep.join([BASE_OUTPUT, model_path])
-LBIN_PATH = os.path.sep.join([BASE_OUTPUT, lbin_path])
-PLOT_PATH = os.path.sep.join([BASE_OUTPUT, plot_path])
-CMAT_PATH = os.path.sep.join([BASE_OUTPUT, cmat_path])
-ACCS_PATH = os.path.sep.join([BASE_OUTPUT, accs_path])
-LOSS_PATH = os.path.sep.join([BASE_OUTPUT, loss_path])
-TEST_PATH = os.path.sep.join([BASE_OUTPUT, test_path])
+
+# Create output paths using selected configuration
+# Receives:
+#   config_name: name of selected configuration
+#   config_dict: configuration dictionary of 
+#                  the selected configuration
+# Returns:
+#   paths: dictionary with output paths
+def create_paths(config_name, config_dict):
+
+    # Define the base path to the input dataset
+    BASE_PATH = config_dict['dataset']
+
+    # Add dir to complete base path
+    IMAGES_PATH = os.path.sep.join([BASE_PATH, "images"])
+    ANNOTS_PATH = os.path.sep.join([BASE_PATH, "annotations"])
+
+    # Get basename from base path
+    DATASET = os.path.basename(BASE_PATH)
+
+    # Define the path to the base output directory
+    BASE_OUTPUT = os.path.sep.join(["output", DATASET])
+
+    # Create string to store name with the next notation
+    # NOTATION: TEST # + DESCRIPTION + EXTENSION
+    model_path = config_name + "_model.h5"
+    lbin_path = config_name + "_lbin.pickle"
+    plot_path = config_name + "_plot.png"
+    cmat_path = config_name + "_cmat.png"
+    accs_path = config_name + "_accs.png"
+    loss_path = config_name + "_loss.png"
+    test_path = config_name + "_test.txt"
+
+    # Define the path to the:
+    #   Trained model, binarized classes, plots
+    #   and images used in the test split
+    MODEL_PATH = os.path.sep.join([BASE_OUTPUT, model_path])
+    LBIN_PATH = os.path.sep.join([BASE_OUTPUT, lbin_path])
+    PLOT_PATH = os.path.sep.join([BASE_OUTPUT, plot_path])
+    CMAT_PATH = os.path.sep.join([BASE_OUTPUT, cmat_path])
+    ACCS_PATH = os.path.sep.join([BASE_OUTPUT, accs_path])
+    LOSS_PATH = os.path.sep.join([BASE_OUTPUT, loss_path])
+    TEST_PATH = os.path.sep.join([BASE_OUTPUT, test_path])
+
+    # Create dictionary with final paths
+    paths = {
+            "output": BASE_OUTPUT,
+            "images": IMAGES_PATH,
+            "annotations": ANNOTS_PATH,
+            "model": MODEL_PATH,
+            "binarizer": LBIN_PATH,
+            "plot": PLOT_PATH,
+            "matrix": CMAT_PATH,
+            "accuracy": ACCS_PATH,
+            "loss": LOSS_PATH,
+            "test": TEST_PATH
+            }
+
+    return paths
