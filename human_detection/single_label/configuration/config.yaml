@@ -1,0 +1,29 @@
+configuration:
+  # Base configuration
+  base:
+    # DATASET PATH
+    dataset: "/home/harodrig/thesis/datasets/bb_v2"
+    # IMAGE_DIMS -> image dimesions (pre-processing)
+    imageDimensions: [96, 96, 3]
+    # EPOCHS -> in order to learn patterns using backpropagation (100 or 125)
+    epochs: 100
+    # LR -> initial learning rate
+    learningRate: 0.0001
+    # BS -> batch size
+    batchSize: 32
+    # Size of test in train_test_split
+    testSplit: 0.2
+  # Configuration "a"
+  a:
+    # DATASET PATH
+    dataset: "/home/<user>/datasets/human"
+    # IMAGE_DIMS -> image dimesions (pre-processing)
+    imageDimensions: [96, 96, 3]
+    # EPOCHS -> in order to learn patterns using backpropagation (100 or 125)
+    epochs: 200
+    # LR -> initial learning rate
+    learningRate: 0.0001
+    # BS -> batch size
+    batchSize: 32
+    # Size of test in train_test_split
+    testSplit: 0.2
