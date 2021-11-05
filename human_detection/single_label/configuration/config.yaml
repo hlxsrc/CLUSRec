@@ -2,7 +2,7 @@ configuration:
   # Base configuration
   base:
     # DATASET PATH
-    dataset: "/home/harodrig/thesis/datasets/bb_v2"
+    dataset: "/home/<user>/datasets/human"
     # IMAGE_DIMS -> image dimesions (pre-processing)
     imageDimensions: [96, 96, 3]
     # EPOCHS -> in order to learn patterns using backpropagation (100 or 125)
