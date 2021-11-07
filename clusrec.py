@@ -1,5 +1,5 @@
 # USAGE:
-# python clusrec.py --input path/to/input --config config
+# python clusrec.py -i <path> -hm <file> -hl <file> -cm <file> -cl <file>
 
 # Enable/disable debugging logs (0,1,2,3)
 # 0 -> all, 3 -> none
@@ -56,10 +56,6 @@ HUMAN_LBIN_PATH = args["humanlbin"]
 CLOTHES_MODEL_PATH = args["clothesmodel"]
 CLOTHES_LBIN_PATH = args["clotheslbin"]
 
-# Store images dimension of each model
-HUMAN_IMG_DIM = (224, 224, 3)
-CLOTHES_IMG_DIM = (96, 96, 3)
-
 # Load the human body object detector and label binarizer from disk
 print("[INFO] Loading human body object detector...")
 human_model = load_model(HUMAN_MODEL_PATH)
@@ -69,6 +65,13 @@ human_lb = pickle.loads(open(HUMAN_LBIN_PATH, "rb").read())
 print("[INFO] Loading clothes object detector...")
 clothes_model = load_model(CLOTHES_MODEL_PATH)
 clothes_lb = pickle.loads(open(CLOTHES_LBIN_PATH, "rb").read())
+
+# Get shape of first layer of models and
+# store images dimension of each model
+HUMAN_IMG_DIM = human_model.layers[0].get_output_at(0).get_shape().as_list()
+CLOTHES_IMG_DIM = clothes_model.layers[0].get_output_at(0).get_shape().as_list()
+HUMAN_IMG_DIM.pop(0)
+CLOTHES_IMG_DIM.pop(0)
 
 # Loop over the images 
 for imagePath in imagePaths:
