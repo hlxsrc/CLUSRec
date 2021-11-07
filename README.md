@@ -174,4 +174,194 @@ Once the virtual environment was created you can start running the Python script
 workon clusrec
 ```
 
+## Before Starting
+
+All of the Python scripts in this repository were created with the idea of being easy and straightforward to use. For this reason the basic usage is almost the same in every training and classifying script:
+
+```sh
+python train.py --configname <configuration>
+```
+
+and
+
+```sh
+python predict.py --input <path/to/file> --configname <configuration>
+```
+
+Where the configuration is stored in a YAML file inside each of the main directories in the `configuration/` directory. 
+
+The configuration file is named `config.yaml` and the content of the file is shown below:
+
+```yaml
+configuration:
+  base:
+    dataset: "/home/<user>/datasets/human"
+    imageDimensions: [96, 96, 3]
+    epochs: 100
+    learningRate: 0.0001
+    batchSize: 32
+    testSplit: 0.2
+```
+
+You can add a new configuration appending the desired configuration inside the file `config.yaml` below the `base` configuration:
+
+```yaml
+configuration:
+  base:
+    dataset: "/home/<user>/datasets/human"
+    imageDimensions: [96, 96, 3]
+    epochs: 100
+    learningRate: 0.0001
+    batchSize: 32
+    testSplit: 0.2
+  a:
+    dataset: "/home/<user>/datasets/human"
+    imageDimensions: [96, 96, 3]
+    epochs: 200
+    learningRate: 0.0001
+    batchSize: 32
+    testSplit: 0.2
+```
+
+In this example the new configuration is named `a` and it is using 200 epochs and a learning rate of 0.0001. You can add as many configuration as you want as long as you are using the correct convention which is:
+
+```yaml
+configuration:
+  ...
+  <configuration_name>:
+    dataset: <path/to/dataset>
+    imageDimensions: <input_image_dimensions>
+    epochs: <epochs>
+    learningRate: <learning_rate>
+    batchSize: <batch_size>
+    testSplit: <test_split>
+  ...
+```
+
+Alternatively you can create a new configuration file and pass the path to new file to the training script with the flag `--configfile`
+
+## Clothes
+
+### Training
+
+Usage:
+
+```sh
+python train.py --configname <configuration>
+```
+
+Example:
+
+```sh
+python train.py --configname base
+```
+
+### Classifying
+
+```sh 
+python classify.py --input <path/to/file> --configname <configuration>
+```
+
+Example:
+
+```sh
+python --input tests/test_01.jpg --configname base
+```
+
+or
+
+```sh
+python --input test.txt --configname base
+```
+
+## Human Silhoutte
+
+### Training (With Bounding Box Regression)
+
+Usage: 
+
+```sh
+python train.py --configname <configuration> 
+```
+
+Example:
+
+```sh
+python train.py --configname base
+```
+
+### Predicting (With Bounding Box Regression)
+
+Usage:
+
+```sh
+python predict.py --input <path/to/file> --configname <configuration>
+```
+
+Example:
+
+```sh
+python predict.py --input tests/test_01.jpg --configname base
+```
+
+or
+
+```sh
+python predict.py --input test.txt --configname base
+```
+
+### Training (Single Label)
+
+Usage:
+
+```sh
+python train.py --configname base
+```
+
+Example:
+
+```sh
+python train.py --configname base
+```
+
+### Predicting (Single Label)
+
+Usage:
+
+```sh
+python predict.py --input <path/to/file> --configname <configuration>
+```
+
+Example:
+
+```sh
+python predict.py --input tests/test_01.jpg --configname base
+```
+
+or
+
+```sh
+python predict.py --input test.txt --configname base
+```
+
+## CLUSRec
+
+This script is the final wrapper to join the created models together.
+
+Usage:
+
+```sh
+python clusrec.py -i <path> -hm <file> -hl <file> -cm <file> -cl <file>
+```
+
+Example: 
+
+```sh
+python clusrec.py \
+  -i test.txt \
+  -hm human_detection/bounding_box_regression/output/human/base_model.h5 \
+  -hl human_detection/bounding_box_regression/output/human/base_lbin.pickle \
+  -cm clothes_detection/output/clothes/base_model.h5 \
+  -cl clothes_detection/output/clothes/base_lbin.pickle
+```
 
