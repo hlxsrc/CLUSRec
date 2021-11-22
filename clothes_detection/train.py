@@ -64,13 +64,14 @@ random.shuffle(imagePaths)
 data = []
 imageNames = []
 labels = []
+classes = []
 
 # Get image dimensions
 IMAGE_DIMS = config_dict["imageDimensions"]
 
 # Loop over the input images
 for imagePath in imagePaths:
-	
+    
     # Load the image, pre-process it, and store it in the data list
     image = cv2.imread(imagePath)
     # Pre-process the image
@@ -101,7 +102,10 @@ labels = mlb.fit_transform(labels)
 
 # Loop over each of the possible class labels and show them
 for (i, label) in enumerate(mlb.classes_):
-	print("{}. {}".format(i + 1, label))
+    classes.append(label)
+    print("{}. {}".format(i + 1, label))
+
+print(classes)
 
 # Partition the data into training and testing splits
 split = train_test_split(data, labels,
@@ -126,9 +130,9 @@ aug = ImageDataGenerator(rotation_range=25, width_shift_range=0.1,
 # Initialize the model 
 print("[INFO] compiling model...")
 model = SmallerVGGNet.build(
-	width=IMAGE_DIMS[1], height=IMAGE_DIMS[0],
-	depth=IMAGE_DIMS[2], classes=len(mlb.classes_),
-	finalAct="sigmoid")
+    width=IMAGE_DIMS[1], height=IMAGE_DIMS[0],
+    depth=IMAGE_DIMS[2], classes=len(mlb.classes_),
+    finalAct="sigmoid")
 
 # Initialize the optimizer (SGD is sufficient)
 opt = Adam(learning_rate=config_dict["learningRate"], 
@@ -136,16 +140,16 @@ opt = Adam(learning_rate=config_dict["learningRate"],
 
 # Compile the model
 model.compile(loss="binary_crossentropy", optimizer=opt,
-	metrics=["accuracy"])
+    metrics=["accuracy"])
 
 # Train the network
 print("[INFO] training network...")
 H = model.fit(
-	x=aug.flow(trainImages, trainLabels, 
+    x=aug.flow(trainImages, trainLabels, 
         batch_size=config_dict["batchSize"]),
-	validation_data=(testImages, testLabels),
-	steps_per_epoch=len(trainImages) // config_dict["batchSize"],
-	epochs=config_dict["epochs"], verbose=10)
+    validation_data=(testImages, testLabels),
+    steps_per_epoch=len(trainImages) // config_dict["batchSize"],
+    epochs=config_dict["epochs"], verbose=10)
 
 # Save the model to disk
 print("[INFO] serializing network...")
@@ -161,7 +165,8 @@ f.close()
 print("\n")
 print("[INFO] Evaluating network...")
 predictions = model.predict(testImages, batch_size=config_dict["batchSize"])
-print(classification_report(testLabels.argmax(axis=1), predictions.argmax(axis=1), target_names=["black", "blue", "gray", "jeans", "pants", "shirt", "sweater", "white"]))
+print(classification_report(testLabels.argmax(axis=1), 
+    predictions.argmax(axis=1), target_names=classes))
 
 # Create Confusion Matrix
 print("\n")
@@ -176,8 +181,8 @@ sns.heatmap(cm, annot=True, ax=ax, fmt='g', cmap='Greens')  # annot=True to anno
 ax.set_xlabel('Predicted labels')
 ax.set_ylabel('True labels')
 ax.set_title('Confusion Matrix')
-ax.xaxis.set_ticklabels(["black", "blue", "gray", "jeans", "pants", "shirt", "sweater", "white"])
-ax.yaxis.set_ticklabels(["black", "blue", "gray", "jeans", "pants", "shirt", "sweater", "white"])
+ax.xaxis.set_ticklabels(classes)
+ax.yaxis.set_ticklabels(classes)
 plt.savefig(paths_dict["matrix"])
 
 # Plot the training loss and accuracy
