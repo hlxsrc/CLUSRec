@@ -359,8 +359,19 @@ Example:
 ```sh
 python clusrec.py \
   -i test.txt \
-  -hm human_detection/bounding_box_regression/output/human/base_model.h5 \
-  -hl human_detection/bounding_box_regression/output/human/base_lbin.pickle \
+  -hm human_detection/multi_label/output/human/base_model.h5 \
+  -hl human_detection/multi_label/output/human/base_lbin.pickle \
+  -cm clothes_detection/output/clothes/base_model.h5 \
+  -cl clothes_detection/output/clothes/base_lbin.pickle
+```
+
+or
+
+```sh
+python clusrec.py \
+  -i test.txt \
+  -hm human_detection/single_label/output/human/base_model.h5 \
+  -hl human_detection/single_label/output/human/base_lbin.pickle \
   -cm clothes_detection/output/clothes/base_model.h5 \
   -cl clothes_detection/output/clothes/base_lbin.pickle
 ```
