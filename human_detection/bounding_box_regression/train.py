@@ -218,6 +218,12 @@ f = open(paths_dict["binarizer"], "wb")
 f.write(pickle.dumps(lb))
 f.close()
 
+# Evaluate the network
+print("\n")
+print("[INFO] Evaluating network...")
+(boxPreds, labelPreds) = model.predict(testImages, batch_size=config_dict["batchSize"])
+print(classification_report(testLabels.argmax(axis=1), labelPreds.argmax(axis=1), target_names=["human", "other"]))
+
 # Plot the total loss, label loss, and bounding box loss
 lossNames = ["loss", "class_label_loss", "bounding_box_loss"]
 N = np.arange(0, config_dict["epochs"])
