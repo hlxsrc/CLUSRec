@@ -130,9 +130,13 @@ dmypy.json
 
 # Output and test files
 clothes_detection/output/
-human_detection/bounding_box_regression/output/
+human_detection/multi_label/output/
 human_detection/single_label/output/
-human_detection/bounding_box_regression/test.txt
+human_detection/multi_label/test.txt
 human_detection/single_label/test.txt
 test.txt
 
+# Ignore local configuration
+clothes_detection/configuration/my_config.yaml
+human_detection/multi_label/configuration/my_config.yaml
+human_detection/single_label/configuration/my_config.yaml
