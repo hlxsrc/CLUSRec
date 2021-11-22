@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Output and test files
+clothes_detection/output/
+human_detection/bounding_box_regression/output/
+human_detection/single_label/output/
+human_detection/bounding_box_regression/test.txt
+human_detection/single_label/test.txt
+test.txt
+
