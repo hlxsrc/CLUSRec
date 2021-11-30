@@ -42,7 +42,8 @@ ap.add_argument("-cf", "--configfile", required=False,
 args = vars(ap.parse_args())
 
 # Get selected configuration as dictionary
-config_dict = config.read_configuration(config=args["configname"])
+config_dict = config.read_configuration(config_file=args["configfile"],
+        config=args["configname"])
 
 # Create output paths
 paths_dict = config.create_paths(args["configname"], config_dict)
