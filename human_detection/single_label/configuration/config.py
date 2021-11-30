@@ -14,8 +14,11 @@ import yaml
 #                  from the configuration yaml
 # This function assumes the configuration file 
 # is in the same directory level
-def read_configuration(config_file='configuration/config.yaml', 
+def read_configuration(config_file=None, 
         config='base'):
+
+    if config_file is None:
+        config_file = 'configuration/config.yaml'
 
     # Read configuration file
     stream = open(config_file, 'r')
