@@ -13,6 +13,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.preprocessing.image import load_img
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.utils import plot_model
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
@@ -44,7 +45,8 @@ ap.add_argument("-cf", "--configfile", required=False,
 args = vars(ap.parse_args())
 
 # Get selected configuration as dictionary
-config_dict = config.read_configuration(config=args["configname"])
+config_dict = config.read_configuration(config_file=args["configfile"],
+        config=args["configname"])
 
 # Create output paths
 paths_dict = config.create_paths(args["configname"], config_dict)
@@ -140,7 +142,7 @@ for (i, label) in enumerate(lb.classes_):
 # Partition the data into training and testing splits using 80% of
 # the data for training and the remaining 20% for testing
 split = train_test_split(data, labels, bboxes, imagePaths, 
-        test_size=config_dict["testSplit"], random_state=42)
+        test_size=config_dict["testSplit"], random_state=27)
 
 # Unpack the data split
 (trainImages, testImages) = split[:2]
@@ -185,6 +187,7 @@ model.compile(loss=losses, optimizer=opt, metrics=["accuracy"],
 
 # Print summary
 print(model.summary())
+plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
 
 # Construct a dictionary for our target training outputs
 trainTargets = {

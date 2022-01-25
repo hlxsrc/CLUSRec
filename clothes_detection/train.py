@@ -11,6 +11,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.utils import plot_model
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
@@ -110,7 +111,7 @@ print(classes)
 
 # Partition the data into training and testing splits
 split = train_test_split(data, labels,
-    imageNames, test_size=config_dict["testSplit"], random_state=42)
+    imageNames, test_size=config_dict["testSplit"], random_state=27)
 
 # Unpack the data split
 (trainImages, testImages) = split[:2]
@@ -142,6 +143,10 @@ opt = Adam(learning_rate=config_dict["learningRate"],
 # Compile the model
 model.compile(loss="binary_crossentropy", optimizer=opt,
     metrics=["accuracy"])
+
+# Print summary
+print(model.summary())
+plot_model(model, to_file='clothes_model_plot.png', show_shapes=True, show_layer_names=True)
 
 # Train the network
 print("[INFO] training network...")
@@ -199,4 +204,4 @@ plt.xlabel("Epoch #")
 plt.ylabel("Loss/Accuracy")
 plt.legend(loc="upper left")
 plt.savefig(paths_dict["plot"])
-plt.show()
+#plt.show()
